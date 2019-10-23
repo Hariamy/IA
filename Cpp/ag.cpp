@@ -171,7 +171,7 @@ int main () {
               *mae;
     std::random_device rd;
 
-    std::cout >> "Tamanho do tabuleiro: ";
+    std::cout << "Tamanho do tabuleiro: ";
     std::cin >> tamTabuleiro;
     std::cout << std::endl;
 
