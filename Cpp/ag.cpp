@@ -134,6 +134,97 @@ Tabuleiro cruzar (Tabuleiro &pai, Tabuleiro &mae) {
     return filho;
 }
 
+Tabuleiro cruzarRandomico (Tabuleiro &pai, Tabuleiro &mae) {
+    int metade = tamTabuleiro / 2,
+        qtdPai = metade,
+        qtdMae = tamTabuleiro - metade,
+        *rainhas = new int[tamTabuleiro];
+    Tabuleiro filho,
+              *tabuleiroEscolhido;
+    std::random_device rd;
+    std::vector <int> posicoes;
+    std::vector <bool> valores(tamTabuleiro);
+
+    fill(valores.begin(), valores.end(), true);
+
+    for (int i = 0; qtdPai > 0 && qtdMae > 0; i++) {
+        if (rd() % 2 == 0) {
+            qtdPai--;
+            tabuleiroEscolhido = &pai;
+        } else {
+            qtdMae--;
+            tabuleiroEscolhido = &mae;
+        }
+
+        if (valores[tabuleiroEscolhido->operator[](i)] == true) {
+            rainhas[i] = tabuleiroEscolhido->operator[](i);
+            valores[rainhas[i]] = false;
+        } else {
+            posicoes.push_back(i);
+        }
+    }
+
+    for (int p : posicoes) {
+        auto iterator = std::find(valores.begin(), valores.end(), true);
+        int posDispo = (iterator - valores.begin());
+        rainhas[p] = posDispo;
+        *iterator = false;
+    }
+
+    filho = rainhas;
+    calcularPeso(filho);
+
+    
+    if (P_MUTACAO < (rd() % 100)) {
+        mutar(filho);
+    }
+
+    return filho;
+}
+
+Tabuleiro cruzarIntercalado (Tabuleiro &pai, Tabuleiro &mae) {
+    int *rainhas = new int[tamTabuleiro];
+    Tabuleiro filho,
+              *tabuleiroEscolhido;
+    std::random_device rd;
+    std::vector <int> posicoes;
+    std::vector <bool> valores(tamTabuleiro);
+
+    fill(valores.begin(), valores.end(), true);
+
+    for (int i = 0; i < tamTabuleiro; i++) {
+        if (i % 2 == 0) {
+            tabuleiroEscolhido = &pai;
+        } else {
+            tabuleiroEscolhido = &mae;
+        }
+
+        if (valores[tabuleiroEscolhido->operator[](i)] == true) {
+            rainhas[i] = tabuleiroEscolhido->operator[](i);
+            valores[rainhas[i]] = false;
+        } else {
+            posicoes.push_back(i);
+        }
+    }
+
+    for (int p : posicoes) {
+        auto iterator = std::find(valores.begin(), valores.end(), true);
+        int posDispo = (iterator - valores.begin());
+        rainhas[p] = posDispo;
+        *iterator = false;
+    }
+
+    filho = rainhas;
+    calcularPeso(filho);
+
+    
+    if (P_MUTACAO < (rd() % 100)) {
+        mutar(filho);
+    }
+
+    return filho;
+}
+
 void gerarTabuleiroRandomico (Tabuleiro &tabuleiro) {
     int *rainhas = new int[tamTabuleiro],
         posSorteado;
@@ -163,7 +254,8 @@ std::vector <Tabuleiro> criarGeracao () {
 }
 
 int main () {
-    int geracao = -1;
+    int geracao = -1,
+        melhorResultado = -1;
     bool achou = false;
     std::vector <Tabuleiro> geracaoAtual,
                             proxGeracao;
@@ -171,7 +263,6 @@ int main () {
               *mae;
     std::random_device rd;
 
-    std::cout << "Tamanho do tabuleiro: ";
     std::cin >> tamTabuleiro;
     std::cout << std::endl;
 
@@ -180,21 +271,30 @@ int main () {
     do {
         geracao++;
 
-        std::cout << "\033[1A\033[KGeração: " << geracao << std::endl;
+        if (geracao % 10  == 0){
+            std::cout << "\033[1A\033[KGeração: " << geracao << " - " << melhorResultado << std::endl;
+        }
 
         geracaoAtual = proxGeracao;
         proxGeracao.clear();
 
         for (int i = 0; i < TAM_GERACAO / 2; i++) {
-            pai = &geracaoAtual[(int)log10(rd()) % TAM_GERACAO];
-            mae = &geracaoAtual[(int)log10(rd()) % TAM_GERACAO];
+            pai = &geracaoAtual[(int)logf64(rd()) % TAM_GERACAO];
+            mae = &geracaoAtual[(int)logf64(rd()) % TAM_GERACAO];
+            
+            //proxGeracao.push_back(cruzar(*pai, *mae));
+            //proxGeracao.push_back(cruzar(*mae, *pai));
 
-            proxGeracao.push_back(cruzar(*pai, *mae));
-            proxGeracao.push_back(cruzar(*mae, *pai));
+            //proxGeracao.push_back(cruzarRandomico(*pai, *mae));
+            //proxGeracao.push_back(cruzarRandomico(*mae, *pai));
+
+            proxGeracao.push_back(cruzarIntercalado(*pai, *mae));
+            proxGeracao.push_back(cruzarIntercalado(*mae, *pai));
         }
 
         std::sort(proxGeracao.begin(), proxGeracao.end(), [] (Tabuleiro &t1, Tabuleiro &t2) { return t1.obterPeso() < t2.obterPeso(); });
-        achou = proxGeracao[0].obterPeso() == 0;
+        melhorResultado = proxGeracao[0].obterPeso();
+        achou = melhorResultado == 0;
     } while (geracao < QTD_GERACAO && !achou);
     std::cout << proxGeracao[0] << "Peso: " << proxGeracao[0].obterPeso() << std::endl;
 
