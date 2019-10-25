@@ -54,9 +54,9 @@ public:
     }
 
     friend std::ostream& operator << (std::ostream& os, const Tabuleiro &tabuleiro) {
-        os << FUNDO_BRANCO << COR_AZUL;
         os << std::endl << std::endl;
 
+        os << FUNDO_BRANCO << COR_AZUL;
         os << " ┏";
         for (int i = 0; i < tamTabuleiro; i++) {
             os << "━━━";
@@ -75,6 +75,8 @@ public:
                     os << FUNDO_BRANCO << COR_AZUL;
                     os << ((i == tabuleiro.rainhas[j]) ? SIMBOLO_RAINHA : ESPACO_BRANCO) ;
                 }
+        		os << FUNDO_NORMAL << COR_NORMAL;
+
             }
             os << FUNDO_BRANCO << COR_AZUL;
             os << "┃ " << std::endl;
@@ -84,9 +86,9 @@ public:
         for (int i = 0; i < tamTabuleiro; i++) {
             os << "━━━";
         }
-        os << "┛ " << std::endl;
+        os << "┛ ";
         os << FUNDO_NORMAL << COR_NORMAL;
-
+        os << std::endl;
         return os;
     }
 };
