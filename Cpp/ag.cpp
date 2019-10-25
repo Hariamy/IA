@@ -22,6 +22,11 @@ double pesoTotal = 0,
        passoPeso = 0;
 std::map <double, int> sorteio;
 
+#define COR1 COR_PRETO
+#define FUNDO2 FUNDO_PRETO
+
+#define COR2 COR_BRANCO
+#define FUNDO1 FUNDO_BRANCO
 
 class Tabuleiro {
     int *rainhas,
@@ -54,9 +59,10 @@ public:
     }
 
     friend std::ostream& operator << (std::ostream& os, const Tabuleiro &tabuleiro) {
+
         os << std::endl << std::endl;
 
-        os << FUNDO_BRANCO << COR_AZUL;
+        os << FUNDO1 << COR1;
         os << " ┏";
         for (int i = 0; i < tamTabuleiro; i++) {
             os << "━━━";
@@ -65,22 +71,25 @@ public:
 
         os << std::endl;
         for (int i = 0; i < tamTabuleiro; i++) {
-            os << FUNDO_BRANCO << COR_AZUL;
+            os << FUNDO1 << COR1;
             os << " ┃";
             for (int j = 0; j < tamTabuleiro; j++) {
                 if ((i % 2 == 0 && j % 2 == 0) || (i % 2 != 0 && j % 2 != 0)){
-                    os << FUNDO_AZUL << COR_BRANCO;
+                    os << FUNDO2 << COR2;
                     os << ((i == tabuleiro.rainhas[j]) ? SIMBOLO_RAINHA : ESPACO_BRANCO) ;
                 } else {
-                    os << FUNDO_BRANCO << COR_AZUL;
+                    os << FUNDO1 << COR1;
                     os << ((i == tabuleiro.rainhas[j]) ? SIMBOLO_RAINHA : ESPACO_BRANCO) ;
                 }
-        		os << FUNDO_NORMAL << COR_NORMAL;
+        		
 
             }
-            os << FUNDO_BRANCO << COR_AZUL;
-            os << "┃ " << std::endl;
+            os << FUNDO1 << COR1;
+            os << "┃ ";
+            os << FUNDO_NORMAL << COR_NORMAL << std::endl;
         }
+        
+        os << FUNDO1 << COR1;
 
         os << " ┗";
         for (int i = 0; i < tamTabuleiro; i++) {
