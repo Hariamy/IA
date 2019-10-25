@@ -4,21 +4,36 @@
 #include <vector>
 #include <cstring>
 #include <string>
+#include <map>
 
-#define TAM_GERACAO 1000
-#define QTD_GERACAO 10000
+#include "cores.h"
+
 #define P_MUTACAO 90
 
-int tamTabuleiro = 0;
+#define SIMBOLO_RAINHA " ♛ "
+#define ESPACO_BRANCO "   "
+
+int tamTabuleiro = 0,
+    passo = 0,
+    QTD_GERACAO = 0,
+    TAM_GERACAO = 0;
+
+double pesoTotal = 0,
+       passoPeso = 0;
+std::map <double, int> sorteio;
+
 
 class Tabuleiro {
-    int peso,
-        *rainhas;
-public:
-    Tabuleiro () : peso(0), rainhas(new int[tamTabuleiro]) { }
+    int *rainhas,
+        qtdAtaque;
+    double peso;
 
-    int& obterPeso () { return peso; }
+public:
+    Tabuleiro () : peso(0), qtdAtaque(0), rainhas(new int[tamTabuleiro]) { }
+
+    double& obterPeso () { return peso; }
     int* obterRainhas () { return rainhas; }
+    int& obterQtdAtaque () { return qtdAtaque; }
 
     void redimencionar (int redi) {
         if (rainhas != NULL){
@@ -39,27 +54,39 @@ public:
     }
 
     friend std::ostream& operator << (std::ostream& os, const Tabuleiro &tabuleiro) {
-        os << std::endl << "\u254b";	
+        os << FUNDO_BRANCO << COR_AZUL;
+        os << std::endl << std::endl;
+
+        os << " ┏";
         for (int i = 0; i < tamTabuleiro; i++) {
-                    os << "\u2501\u2501\u254b";
-            }
+            os << "━━━";
+        }
+        os << "┓ ";
+
         os << std::endl;
         for (int i = 0; i < tamTabuleiro; i++) {
-            os << "\u2503";
+            os << FUNDO_BRANCO << COR_AZUL;
+            os << " ┃";
             for (int j = 0; j < tamTabuleiro; j++) {
                 if ((i % 2 == 0 && j % 2 == 0) || (i % 2 != 0 && j % 2 != 0)){
-                    os << ((i == tabuleiro.rainhas[j]) ? "\u265B " : "\u2588\u2588") << "\u2503";
+                    os << FUNDO_AZUL << COR_BRANCO;
+                    os << ((i == tabuleiro.rainhas[j]) ? SIMBOLO_RAINHA : ESPACO_BRANCO) ;
                 } else {
-                    os << ((i == tabuleiro.rainhas[j]) ? "\u265B " : "  ") << "\u2503";
+                    os << FUNDO_BRANCO << COR_AZUL;
+                    os << ((i == tabuleiro.rainhas[j]) ? SIMBOLO_RAINHA : ESPACO_BRANCO) ;
                 }
             }
-            os << std::endl << "\u254b";
-            for (int i = 0; i < tamTabuleiro; i++) {
-                os << "\u2501\u2501\u254b";
-            }
-            os << std::endl;
+            os << FUNDO_BRANCO << COR_AZUL;
+            os << "┃ " << std::endl;
         }
-        os << std::endl;
+
+        os << " ┗";
+        for (int i = 0; i < tamTabuleiro; i++) {
+            os << "━━━";
+        }
+        os << "┛ " << std::endl;
+        os << FUNDO_NORMAL << COR_NORMAL;
+
         return os;
     }
 };
@@ -69,10 +96,17 @@ void calcularPeso (Tabuleiro &tabuleiro) {
         for (int j = i+1; j < tamTabuleiro; j++) {
             if (abs(i - j) == abs(tabuleiro[i] - tabuleiro[j]) ||
                 tabuleiro[i] == tabuleiro[j]) {
-                tabuleiro.obterPeso()++;
+                tabuleiro.obterQtdAtaque()++;
             }
         }
     }
+
+    if (tabuleiro.obterQtdAtaque() == 0){
+        tabuleiro.obterPeso() = 1.0f / tabuleiro.obterQtdAtaque();
+    } else {
+        tabuleiro.obterPeso() = 1.0f / 0.5f;
+    }
+
 }
 
 void mutar (Tabuleiro &filho) {
@@ -124,12 +158,14 @@ Tabuleiro cruzar (Tabuleiro &pai, Tabuleiro &mae) {
     }
 
     filho = rainhas;
-    calcularPeso(filho);
 
     
     if (P_MUTACAO < (rd() % 100)) {
         mutar(filho);
     }
+
+    calcularPeso(filho);
+    pesoTotal += filho.obterPeso();
 
     return filho;
 }
@@ -172,12 +208,14 @@ Tabuleiro cruzarRandomico (Tabuleiro &pai, Tabuleiro &mae) {
     }
 
     filho = rainhas;
-    calcularPeso(filho);
 
     
     if (P_MUTACAO < (rd() % 100)) {
         mutar(filho);
     }
+
+    calcularPeso(filho);
+    pesoTotal += filho.obterPeso();
 
     return filho;
 }
@@ -215,12 +253,14 @@ Tabuleiro cruzarIntercalado (Tabuleiro &pai, Tabuleiro &mae) {
     }
 
     filho = rainhas;
-    calcularPeso(filho);
 
     
     if (P_MUTACAO < (rd() % 100)) {
         mutar(filho);
     }
+
+    calcularPeso(filho);
+    pesoTotal += filho.obterPeso();
 
     return filho;
 }
@@ -243,6 +283,8 @@ void gerarTabuleiroRandomico (Tabuleiro &tabuleiro) {
     }
     tabuleiro = rainhas;
     calcularPeso(tabuleiro);
+    
+    pesoTotal += tabuleiro.obterPeso();
 }
 
 std::vector <Tabuleiro> criarGeracao () {
@@ -263,26 +305,39 @@ int main () {
               *mae;
     std::random_device rd;
 
-    std::cout << "Tamanho do tabuleiro: ";
+    std::cout << "\nTamanho do tabuleiro: ";
     std::cin >> tamTabuleiro;
-    std::cout << std::endl;
+    
+    std::cout << "Quantidade máxima de gerações: ";
+    std::cin >> QTD_GERACAO;
 
+    std::cout << "Tamanho da população por geração: ";
+    std::cin >> TAM_GERACAO;
+
+    std::cout << std::endl << std::endl;
     proxGeracao = criarGeracao();
 
     do {
         geracao++;
 
-        if (geracao % 10  == 0){
-            std::cout << "\033[1A\033[KGeração: " << geracao << " - " << melhorResultado << std::endl;
-        }
+        //if (geracao % 10  == 0){
+            std::cout << "\033[1A\033[KGeração: " << geracao << " - Peso: " << melhorResultado << std::endl;
+        //}
 
         for_each(geracaoAtual.begin(), geracaoAtual.end(), [] (Tabuleiro &tabuleiro) { delete(tabuleiro.obterRainhas()); });
         geracaoAtual = proxGeracao;
         proxGeracao.clear();
+        passo = 0;
+        passoPeso = 0;
+        for_each(proxGeracao.begin(), proxGeracao.end(), [] (Tabuleiro &tabuleiro) { sorteio[passoPeso] = passo;
+                                                                                     passo++;
+                                                                                     passoPeso += tabuleiro.obterPeso() / pesoTotal; });
 
         for (int i = 0; i < TAM_GERACAO / 2; i++) {
-            pai = &geracaoAtual[(int)logf64(rd()) % TAM_GERACAO];
-            mae = &geracaoAtual[(int)logf64(rd()) % TAM_GERACAO];
+            //pai = &geracaoAtual[(int)logf64(rd()) % TAM_GERACAO];
+            //mae = &geracaoAtual[(int)logf64(rd()) % TAM_GERACAO];
+            pai = &geracaoAtual[sorteio.lower_bound(rd()/rd.max())->second];
+            mae = &geracaoAtual[sorteio.lower_bound(rd()/rd.max())->second];
             
             //proxGeracao.push_back(cruzar(*pai, *mae));
             //proxGeracao.push_back(cruzar(*mae, *pai));
@@ -293,12 +348,13 @@ int main () {
             proxGeracao.push_back(cruzarIntercalado(*pai, *mae));
             proxGeracao.push_back(cruzarIntercalado(*mae, *pai));
         }
-
-        std::sort(proxGeracao.begin(), proxGeracao.end(), [] (Tabuleiro &t1, Tabuleiro &t2) { return t1.obterPeso() < t2.obterPeso(); });
-        melhorResultado = proxGeracao[0].obterPeso();
+        pesoTotal = 0;
+        std::sort(proxGeracao.begin(), proxGeracao.end(), [] (Tabuleiro &t1, Tabuleiro &t2) { return t1.obterQtdAtaque() < t2.obterQtdAtaque(); });
+        melhorResultado = proxGeracao[0].obterQtdAtaque();
         achou = melhorResultado == 0;
     } while (geracao < QTD_GERACAO && !achou);
-    std::cout << proxGeracao[0] << "Peso: " << proxGeracao[0].obterPeso() << std::endl;
+    std::cout << "\033[1A\033[KGeração: " << geracao << " - Peso: " << melhorResultado << std::endl;
+    std::cout << proxGeracao[0] << "\n\nQuantidade de ataques: " << proxGeracao[0].obterQtdAtaque() << std::endl;
 
     return 0;
 }
