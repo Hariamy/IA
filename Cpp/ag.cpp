@@ -263,6 +263,7 @@ int main () {
               *mae;
     std::random_device rd;
 
+    std::cout << "Tamanho do tabuleiro: ";
     std::cin >> tamTabuleiro;
     std::cout << std::endl;
 
@@ -275,6 +276,7 @@ int main () {
             std::cout << "\033[1A\033[KGeração: " << geracao << " - " << melhorResultado << std::endl;
         }
 
+        for_each(geracaoAtual.begin(), geracaoAtual.end(), [] (Tabuleiro &tabuleiro) { delete(tabuleiro.obterRainhas()); });
         geracaoAtual = proxGeracao;
         proxGeracao.clear();
 
